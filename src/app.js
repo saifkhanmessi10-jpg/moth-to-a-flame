@@ -199,7 +199,9 @@ function wireShell() {
   if (header) {
     const onScroll = () => header.classList.toggle('is-scrolled', window.scrollY > 40);
     if (header.classList.contains('is-over')) { window.onscroll = onScroll; onScroll(); } else window.onscroll = null;
-    header.querySelector('.nav-toggle').onclick = () => header.classList.toggle('nav-open');
+    const toggle = header.querySelector('.nav-toggle');
+    toggle.onclick = () => { const open = header.classList.toggle('nav-open'); toggle.innerHTML = icon(open ? 'close' : 'menu'); toggle.setAttribute('aria-expanded', open); document.body.style.overflow = open ? 'hidden' : ''; };
+    document.body.style.overflow = '';
   } else window.onscroll = null;
   const out = app.querySelector('[data-signout]');
   if (out) out.onclick = () => { store.signOut(); navigate('/palace'); toast('You have been signed out.'); };
