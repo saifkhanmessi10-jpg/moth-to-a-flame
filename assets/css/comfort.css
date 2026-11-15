@@ -125,3 +125,8 @@ body.has-buybar .preview-switch { bottom: 84px; }
   .brand .wordmark { white-space: nowrap; font-size: .7rem; letter-spacing: .12em; }
   .site-header .bar { gap: 8px; }
 }
+.site-header .site-nav { overflow-y: auto; }
+@media (max-width: 680px), (max-height: 700px) {
+  .site-header .site-nav { justify-content: flex-start; gap: 22px; padding: 36px 20px 90px; }
+  .site-header .site-nav a { font-size: 1.3rem; }
+}

@@ -203,7 +203,7 @@ function wireShell() {
     const onScroll = () => header.classList.toggle('is-scrolled', window.scrollY > 40);
     if (header.classList.contains('is-over')) { window.onscroll = onScroll; onScroll(); } else window.onscroll = null;
     const toggle = header.querySelector('.nav-toggle');
-    toggle.onclick = () => { const open = header.classList.toggle('nav-open'); toggle.innerHTML = icon(open ? 'close' : 'menu'); toggle.setAttribute('aria-expanded', open); document.body.style.overflow = open ? 'hidden' : ''; };
+    toggle.onclick = () => { const open = header.classList.toggle('nav-open'); const nav = header.querySelector('.site-nav'); const top = Math.max(0, header.getBoundingClientRect().bottom); nav.style.top = `${top}px`; nav.style.height = `calc(100vh - ${top}px)`; toggle.innerHTML = icon(open ? 'close' : 'menu'); toggle.setAttribute('aria-expanded', open); document.body.style.overflow = open ? 'hidden' : ''; };
     document.body.style.overflow = '';
   } else window.onscroll = null;
   const out = app.querySelector('[data-signout]');
