@@ -9,6 +9,8 @@
 
 import * as store from './store.js';
 import { esc, icon, mothMark, monogram, toast, revealOnScroll } from './ui.js';
+import { openBag } from './components/bag-drawer.js';
+import { openSearch } from './components/search-overlay.js';
 
 const P = (file) => () => import(`./pages/${file}.js`);
 // [pattern, loader, layout, options]
@@ -24,6 +26,7 @@ const ROUTES = [
   ['/palace/shop/:slug', P('market/storefront'), 'palace'],
   ['/palace/product/:id', P('market/product'), 'palace'],
   ['/palace/search', P('market/search'), 'palace'],
+  ['/palace/finder', P('market/finder'), 'palace'],
   ['/palace/bag', P('market/bag'), 'palace'],
   ['/palace/checkout', P('market/checkout'), 'palace'],
   ['/palace/order/:id', P('market/order'), 'palace'],
@@ -84,7 +87,7 @@ function publicHeader(layout, path, over) {
   const is = (p) => (path === p || (p !== '/' && p !== '/palace' && path.startsWith(p)) ? 'is-active' : '');
   const nav = layout === 'site'
     ? `<a href="#/collections" class="${is('/collections')}">Collections</a><a href="#/flame-society" class="${is('/flame-society')}">The Flame Society</a><a href="#/story" class="${is('/story')}">Our Story</a><a href="#/palace" class="palace-pill">Enter the Palace</a>`
-    : `<a href="#/palace/maisons" class="${is('/palace/maisons')}">Maisons</a><a href="#/palace/search" class="${is('/palace/search')}">The Collection</a><a href="#/palace/open-a-maison" class="${is('/palace/open-a-maison')}">Open a Maison</a><a href="#/">Moth to a Flame</a>`;
+    : `<a href="#/palace/maisons" class="${is('/palace/maisons')}">Maisons</a><a href="#/palace/search" class="${is('/palace/search')}">The Collection</a><a href="#/palace/finder" class="${is('/palace/finder')}">Find your flame</a><a href="#/palace/open-a-maison" class="${is('/palace/open-a-maison')}">Open a Maison</a><a href="#/">Moth to a Flame</a>`;
   const brand = layout === 'site'
     ? `<a class="brand" href="#/" aria-label="Moth to a Flame — home">${mothMark(34)}<span class="wordmark">Moth to a Flame<small>Luxury Candle Co.</small></span></a>`
     : `<a class="brand" href="#/palace" aria-label="The Moth Market Palace">${mothMark(34)}<span class="wordmark">Moth Market Palace<small>By Moth to a Flame</small></span></a>`;
@@ -94,9 +97,9 @@ function publicHeader(layout, path, over) {
       <div class="row" style="--gap:8px"><button class="icon-btn nav-toggle" aria-label="Menu">${icon('menu')}</button><nav class="site-nav" aria-label="Primary">${nav}</nav></div>
       ${brand}
       <div class="tools">
-        <a class="icon-btn hide-sm" href="#/palace/search" aria-label="Search the Palace">${icon('search')}</a>
+        <a class="icon-btn" href="#/palace/search" data-open-search aria-label="Search the Palace">${icon('search')}</a>
         <a class="icon-btn" href="#${homeFor(user)}" aria-label="${user ? esc(user.name) : 'Sign in'}">${icon('user')}</a>
-        <a class="icon-btn" href="#/palace/bag" aria-label="Your bag">${icon('bag')}<span class="count-dot" data-bag-count>${store.bagCount() || ''}</span></a>
+        <a class="icon-btn" href="#/palace/bag" data-open-bag aria-label="Your bag">${icon('bag')}<span class="count-dot" data-bag-count>${store.bagCount() || ''}</span></a>
       </div>
     </div>
   </header>`;
@@ -160,7 +163,7 @@ async function renderRoute() {
   const found = match(path);
   const user = store.currentUser();
   const deskRoot = document.getElementById('desk-root'); if (deskRoot) deskRoot.innerHTML = '';
-  document.querySelectorAll('.modal-back').forEach((m) => m.remove());
+  document.querySelectorAll('.modal-back, .toasts').forEach((m) => m.remove());
   if (!found) { app.innerHTML = publicHeader('site', path, false) + `<main class="page">${notReady(path)}</main>` + publicFooter(); wireShell(); return; }
 
   const { layout, opts, params } = found;
@@ -211,12 +214,14 @@ function wireShell() {
 
 /* ------------------------------------------------- global click behaviours */
 document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-open-search]')) { e.preventDefault(); openSearch(); return; }
+  if (e.target.closest('[data-open-bag]') && !location.hash.startsWith('#/palace/bag')) { e.preventDefault(); openBag(); return; }
   const add = e.target.closest('[data-add-to-bag]');
   if (add) {
     e.preventDefault();
     const p = store.getProduct(add.dataset.addToBag);
     const qty = Number(add.dataset.qty || 1);
-    if (p && store.addToBag(p.id, qty)) toast(`${p.name} is in your bag`, { href: '#/palace/bag', action: 'View bag' });
+    if (p && store.addToBag(p.id, qty)) openBag(p.id);
     else toast('This piece is resting between batches.');
     return;
   }

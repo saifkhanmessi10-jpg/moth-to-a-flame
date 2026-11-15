@@ -1,5 +1,6 @@
 // A single piece, shown in its maison's theme.
 import * as store from '../../store.js';
+import { rememberViewed, recentlyViewed } from '../../components/recent.js';
 import { esc, money, icon, mothMark, monogram, themeAttrs, candleArt, productCard, stars, dateFmt, formData } from '../../ui.js';
 import { mountFrontDesk } from '../../components/frontdesk-widget.js';
 
@@ -108,10 +109,16 @@ export function render(ctx) {
             <p class="small muted mt-1">${esc([shop.tagline, shop.location].filter(Boolean).join(' · '))}</p></div>
           <span class="link-arrow">Visit the maison</span>
         </a>
+        ${(() => { const recent = recentlyViewed(4, { exclude: p.id }); return recent.length ? `<header class="mk-head mt-5"><div><div class="eyebrow">Your trail</div><h2 class="h2 mt-1">Recently viewed</h2></div></header>
+        <div class="grid cols-4">${recent.map((x) => `<div>${productCard(x)}</div>`).join('')}</div>` : ''; })()}
         ${more.length ? `<header class="mk-head mt-5"><div><div class="eyebrow">Also from the atelier</div><h2 class="h2 mt-1">More from this maison</h2></div></header>
         <div class="grid cols-4">${more.map((x) => `<div class="reveal">${productCard(x, { showMaison: false })}</div>`).join('')}</div>` : ''}
       </div>
     </section>
+    ${sold ? '' : `<div class="mk-buybar" data-buybar aria-hidden="true">
+      <div class="mk-buybar-info"><span class="mk-buybar-name">${esc(p.name)}</span><span class="gold num">${money(p.price)}</span></div>
+      <button class="btn btn-gold btn-sm" type="button" data-add-to-bag="${esc(p.id)}" data-qty="1" tabindex="-1">Add to bag</button>
+    </div>`}
   </div>`;
 }
 
@@ -122,6 +129,7 @@ export function mount(root, ctx) {
   if (!skipTrack) store.track('product_view', { shopId: p.shopId, productId: p.id });
   skipTrack = false;
   mountFrontDesk(p.shopId);
+  rememberViewed(p.id);
 
   const add = root.querySelector('.mk-buy-add');
   const val = root.querySelector('[data-qty-val]');
@@ -130,7 +138,16 @@ export function mount(root, ctx) {
     qty = Math.max(1, Math.min(p.stock, qty + Number(b.dataset.step)));
     val.textContent = String(qty);
     add.dataset.qty = String(qty);
+    const barBtn = root.querySelector('[data-buybar] [data-add-to-bag]'); if (barBtn) barBtn.dataset.qty = String(qty);
   }));
+
+  // Sticky buy bar: appears once the main Add to bag button scrolls out of view.
+  const bar = root.querySelector('[data-buybar]');
+  if (bar && add && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver(([en]) => { const show = !en.isIntersecting && en.boundingClientRect.top < 0; bar.classList.toggle('is-on', show); bar.setAttribute('aria-hidden', String(!show)); bar.querySelector('button').tabIndex = show ? 0 : -1; document.body.classList.toggle('has-buybar', show); });
+    io.observe(add);
+    window.addEventListener('hashchange', () => { io.disconnect(); document.body.classList.remove('has-buybar'); }, { once: true });
+  }
 
   const jump = root.querySelector('[data-to-reviews]');
   if (jump) jump.addEventListener('click', (e) => { e.preventDefault(); root.querySelector('#mk-reviews').scrollIntoView({ behavior: 'smooth' }); });

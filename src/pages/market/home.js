@@ -1,5 +1,6 @@
 // The lobby of the Moth Market Palace.
 import * as store from '../../store.js';
+import { recentlyViewed } from '../../components/recent.js';
 import { esc, icon, mothMark, productCard, maisonCard } from '../../ui.js';
 
 export const meta = { title: 'The Lobby' };
@@ -31,10 +32,10 @@ export function render() {
         ${mothMark(84)}
         <h1 class="mk-hero-title"><span class="mk-hero-pre">The Moth Market</span><span class="mk-hero-word">Palace</span></h1>
         <div class="ornament" aria-hidden="true"><span>✦</span></div>
-        <p class="lede mk-hero-lede">A house of independent candle maisons, curated by Moth to a Flame.</p>
+        <p class="lede mk-hero-lede">A house of independent candle maisons, curated by <span class="nowrap">Moth to a Flame.</span></p>
         <div class="mk-hero-cta">
-          <a class="btn btn-gold" href="#/palace/maisons">Visit the maisons</a>
-          <a class="btn btn-ghost" href="#/palace/search">The Collection</a>
+          <a class="btn btn-gold" href="#/palace/finder">Find your flame</a>
+          <a class="btn btn-ghost" href="#/palace/maisons">Visit the maisons</a>
         </div>
         ${settings.announcement ? `<p class="mk-hero-note">${icon('truck')}<span>${esc(settings.announcement)}</span></p>` : ''}
       </div>
@@ -44,6 +45,19 @@ export function render() {
         ${live.map((s) => `<a href="#/palace/shop/${esc(s.slug)}">${esc(s.name)}</a>`).join('')}</div>
     </nav>` : ''}
   </section>
+
+  <section class="section-tight mk-moods">
+    <div class="container">
+      <div class="mk-moods-head"><div class="eyebrow">Begin with a feeling</div><button class="link-arrow" type="button" data-open-search>Search the Palace</button></div>
+      <div class="mk-moods-row">
+        ${[['Evening calm', 'lavender', 'For unhurried nights'], ['Smoke & wood', 'smoke', 'Hearth, resin, cedar'], ['White florals', 'tuberose', 'Luminous and soft'], ['Sea air', 'salt', 'Fresh, green, coastal'], ['Sweet comfort', 'vanilla', 'Milk, honey, spice'], ['Ready to give', 'gift', 'Boxed and ribboned']].map(([t, q, s]) => `<a class="mk-mood" href="#/palace/search?q=${q}"><span class="mk-mood-t">${t}</span><span class="mk-mood-s">${s}</span></a>`).join('')}
+      </div>
+    </div>
+  </section>
+
+  ${(() => { const recent = recentlyViewed(4); return recent.length ? `<section class="section-tight"><div class="container">
+    ${head('Welcome back', 'Pick up where you left off', '', '#/palace/search', 'The collection')}
+    <div class="grid cols-4">${recent.map((p) => `<div>${productCard(p)}</div>`).join('')}</div></div></section>` : ''; })()}
 
   ${featured.length ? `<section class="section">
     <div class="container">
