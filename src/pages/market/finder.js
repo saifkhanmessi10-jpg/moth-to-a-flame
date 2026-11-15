@@ -26,34 +26,43 @@ const STEPS = [
 let answers = {};
 let step = 0;
 
+const opt = (k) => STEPS.find((x) => x.key === k).options.find((o) => o.id === answers[k]);
+const hay = (p) => [p.notes.top, p.notes.heart, p.notes.base, p.name].join(' ').toLowerCase();
+const hitsIn = (p, list = []) => list.filter((n) => new RegExp(`\\b${n}`).test(hay(p)));
+/** Does this piece belong to the chosen scent family? */
+function fits(p) {
+  const fam = opt('family');
+  if (!fam || fam.id === 'any') return true;
+  return p.category === fam.id || hitsIn(p, fam.notes).length >= 2;
+}
 function score(p) {
-  const moment = STEPS[0].options.find((o) => o.id === answers.moment);
-  const family = STEPS[1].options.find((o) => o.id === answers.family);
-  const hay = [p.notes.top, p.notes.heart, p.notes.base, p.name, p.description].join(' ').toLowerCase();
-  const hits = (list = []) => list.filter((n) => hay.includes(n));
-  const why = [];
-  let s = 0;
-  if (family?.id !== 'any') {
-    const h = hits(family?.notes);
-    if (p.category === family?.id) { s += 4; why.push(`a ${family.label.toLowerCase()} piece`); }
-    if (h.length) { s += h.length * 1.5; why.push(`notes of ${h.slice(0, 2).join(' and ')}`); }
-  } else if (p.tags?.includes('bestseller')) { s += 3; why.push('a patron favourite'); }
-  if (moment?.gift) { if (p.category === 'Gift Sets' || p.tags?.includes('gift')) { s += 5; why.push('arrives ready to give'); } }
-  else { const h = hits(moment?.notes); if (h.length) { s += h.length * 1.2; why.push(`suited to ${moment.label.split(',')[0].toLowerCase()}`); } }
-  if (p.tags?.includes('bestseller')) s += 0.5;
+  const fam = opt('family'); const moment = opt('moment');
+  const why = []; let s = 0;
+  if (fam && fam.id !== 'any') {
+    const h = hitsIn(p, fam.notes);
+    if (p.category === fam.id) { s += 5; why.push(fam.label.toLowerCase()); }
+    if (h.length) { s += h.length * 1.5; why.push(h.slice(0, 2).join(' and ')); }
+  }
+  if (moment?.gift) { if (p.category === 'Gift Sets' || p.tags?.includes('gift')) { s += 6; why.push('arrives ready to give'); } }
+  else if (moment) { const h = hitsIn(p, moment.notes); if (h.length) { s += h.length * 1.2; why.push(`made for ${moment.label.split(',')[0].toLowerCase()}`); } }
+  if (p.tags?.includes('bestseller')) { s += 1; why.push('a patron favourite'); }
   return { p, s, why: [...new Set(why)] };
 }
 function matches() {
-  const b = STEPS[2].options.find((o) => o.id === answers.budget) || {};
-  let list = store.listProducts({ publicOnly: true }).filter((p) => p.stock > 0 && p.category !== 'Subscriptions');
-  const inBudget = list.filter((p) => (b.min == null || p.price >= b.min) && (b.max == null || p.price < b.max));
-  const ranked = (inBudget.length ? inBudget : list).map(score).sort((a, c) => c.s - a.s);
-  return { list: ranked.slice(0, 6), widened: !inBudget.length };
+  const b = opt('budget') || {};
+  const inBudget = (p) => (b.min == null || p.price >= b.min) && (b.max == null || p.price < b.max);
+  const all = store.listProducts({ publicOnly: true }).filter((p) => p.stock > 0 && p.category !== 'Subscriptions');
+  let pool = all.filter((p) => fits(p) && inBudget(p)); let widened = false;
+  if (pool.length < 3) { pool = all.filter(fits); widened = true; }
+  if (pool.length < 3) pool = all;
+  const ranked = pool.map(score).map((r) => ({ ...r, s: r.s + (inBudget(r.p) ? 4 : 0) }));
+  return { list: ranked.sort((x, y) => y.s - x.s || x.p.price - y.p.price).slice(0, 6), widened };
 }
 
 function stepView() {
   const s = STEPS[step];
   return `<div class="fd-step" data-step="${step}">
+    ${step === 0 ? `<header class="center mb-4"><div class="eyebrow">Find your flame</div><p class="lede mt-1">Three questions. No wrong answers.</p></header>` : ''}
     <div class="fd-progress" aria-label="Question ${step + 1} of ${STEPS.length}">${STEPS.map((_, i) => `<span class="${i <= step ? 'is-on' : ''}"></span>`).join('')}</div>
     <div class="eyebrow mt-3">Question ${step + 1} of ${STEPS.length}</div>
     <h2 class="h1 mt-1">${esc(s.q)}</h2><p class="muted mt-1">${esc(s.hint)}</p>
@@ -69,9 +78,9 @@ function resultView() {
     <div class="center">${mothMark(48)}<div class="eyebrow mt-2">Chosen for you</div>
       <h2 class="h1 mt-1">Your flames</h2>
       <p class="muted mt-1">${esc(label('moment'))} · ${esc(label('family'))} · ${esc(label('budget'))}</p>
-      ${widened ? `<p class="small gold mt-1">Nothing matched that budget exactly, so we have widened it a little.</p>` : ''}
+      ${widened ? `<p class="small gold mt-1">Only a few pieces sit in that budget, so we have included the closest beyond it.</p>` : ''}
     </div>
-    <div class="grid cols-3 mt-4">${list.map(({ p, why }) => `<div class="fd-result">${productCard(p)}${why.length ? `<p class="fd-why">${icon('spark')}<span>Because it is ${esc(why.slice(0, 2).join(', '))}.</span></p>` : ''}</div>`).join('')}</div>
+    <div class="grid cols-3 mt-4">${list.map(({ p, why }) => `<div class="fd-result">${productCard(p)}${why.length ? `<p class="fd-why">${icon('spark')}<span>${esc((why.slice(0, 3).join(' · ')).replace(/^./, (c) => c.toUpperCase()))}</span></p>` : ''}</div>`).join('')}</div>
     <div class="row row-wrap mt-5" style="justify-content:center"><button class="btn btn-ghost" type="button" data-restart>Begin again</button><a class="btn btn-ghost" href="#/palace/search">Browse everything</a></div>
     <p class="small muted center mt-3">Want a second opinion? Every maison has a front desk — open any piece and ask.</p>
   </div>`;
@@ -80,8 +89,7 @@ function resultView() {
 export function render() {
   return `<section class="section fd">
     <div class="container ${step < STEPS.length ? 'container-narrow' : ''}">
-      ${step === 0 && !Object.keys(answers).length ? `<header class="center mb-4"><div class="eyebrow">Find your flame</div><p class="lede mt-1">Three questions. No wrong answers.</p></header>` : ''}
-      <div data-fd-stage>${step < STEPS.length ? stepView() : resultView()}</div>
+            <div data-fd-stage>${step < STEPS.length ? stepView() : resultView()}</div>
     </div></section>`;
 }
 

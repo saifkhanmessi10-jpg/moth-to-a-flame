@@ -31,6 +31,7 @@ body.bd-lock { overflow: hidden; }
 .bd-empty-cta { display: flex; flex-direction: column; gap: 10px; align-items: center; margin-top: 24px; }
 .bd-foot { padding: 20px 24px 22px; border-top: 1px solid var(--line); background: #0f0d0b; }
 .bd-foot-links { display: flex; justify-content: space-between; margin-top: 14px; font-size: .68rem; letter-spacing: .22em; text-transform: uppercase; color: var(--ink-2); }
+.bd-foot-links button { text-transform: inherit; letter-spacing: inherit; font-size: inherit; color: inherit; }
 .bd-foot-links a:hover, .bd-foot-links button:hover { color: var(--gold); }
 
 /* ---------- search overlay ---------- */
