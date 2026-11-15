@@ -86,8 +86,8 @@ function publicHeader(layout, path, over) {
   const user = store.currentUser();
   const is = (p) => (path === p || (p !== '/' && p !== '/palace' && path.startsWith(p)) ? 'is-active' : '');
   const nav = layout === 'site'
-    ? `<a href="#/collections" class="${is('/collections')}">Collections</a><a href="#/flame-society" class="${is('/flame-society')}">The Flame Society</a><a href="#/story" class="${is('/story')}">Our Story</a><a href="#/palace" class="palace-pill">Enter the Palace</a>`
-    : `<a href="#/palace/maisons" class="${is('/palace/maisons')}">Maisons</a><a href="#/palace/search" class="${is('/palace/search')}">The Collection</a><a href="#/palace/finder" class="${is('/palace/finder')}">Find your flame</a><a href="#/palace/open-a-maison" class="${is('/palace/open-a-maison')}">Open a Maison</a><a href="#/">Moth to a Flame</a>`;
+    ? `<a href="#/collections" class="${is('/collections')}">Collections</a><a href="#/flame-society" class="${is('/flame-society')}">The Flame Society</a><a href="#/story" class="${is('/story')}">Our Story</a><a href="#${homeFor(user)}" class="nav-account">${user ? 'Your account' : 'Sign in'}</a><a href="#/palace" class="palace-pill">Enter the Palace</a>`
+    : `<a href="#/palace/maisons" class="${is('/palace/maisons')}">Maisons</a><a href="#/palace/search" class="${is('/palace/search')}">The Collection</a><a href="#/palace/finder" class="${is('/palace/finder')}">Find your flame</a><a href="#/palace/open-a-maison" class="${is('/palace/open-a-maison')}">Open a Maison</a><a href="#${homeFor(user)}" class="nav-account">${user ? 'Your account' : 'Sign in'}</a><a href="#/">Moth to a Flame</a>`;
   const brand = layout === 'site'
     ? `<a class="brand" href="#/" aria-label="Moth to a Flame — home">${mothMark(34)}<span class="wordmark">Moth to a Flame<small>Luxury Candle Co.</small></span></a>`
     : `<a class="brand" href="#/palace" aria-label="The Moth Market Palace">${mothMark(34)}<span class="wordmark">Moth Market Palace<small>By Moth to a Flame</small></span></a>`;
@@ -98,7 +98,7 @@ function publicHeader(layout, path, over) {
       ${brand}
       <div class="tools">
         <a class="icon-btn" href="#/palace/search" data-open-search aria-label="Search the Palace">${icon('search')}</a>
-        <a class="icon-btn" href="#${homeFor(user)}" aria-label="${user ? esc(user.name) : 'Sign in'}">${icon('user')}</a>
+        <a class="icon-btn hide-xs" href="#${homeFor(user)}" aria-label="${user ? esc(user.name) : 'Sign in'}">${icon('user')}</a>
         <a class="icon-btn" href="#/palace/bag" data-open-bag aria-label="Your bag">${icon('bag')}<span class="count-dot" data-bag-count>${store.bagCount() || ''}</span></a>
       </div>
     </div>

@@ -116,3 +116,12 @@ body.has-buybar .preview-switch { bottom: 84px; }
   .preview-switch > button { padding: 7px 10px; font-size: .58rem; }
   .toasts { bottom: 76px; }
 }
+
+/* ---------- compact header on phones: account moves into the menu ---------- */
+.site-nav .nav-account { display: none; }
+@media (max-width: 520px) {
+  .site-header .tools .hide-xs { display: none; }
+  .site-nav .nav-account { display: block; }
+  .brand .wordmark { white-space: nowrap; font-size: .7rem; letter-spacing: .12em; }
+  .site-header .bar { gap: 8px; }
+}
